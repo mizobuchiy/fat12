@@ -33,8 +33,14 @@ int main(int argc, char *argv[]) {
 
   // read target file by fat12
   const char *target_fname = argc > 2 ? argv[2] : "HELLO.TXT";
-  const size_t idx = find_target_file(fat12.dir_entry, target_fname);
+  size_t idx;
+  if ((idx = find_target_file(fat12.dir_entry, target_fname)) >=
+      sizeof(fat12.dir_entry) / sizeof(fat12.dir_entry[0])) {
+    fprintf(stderr, "can't find %s\n", target_fname);
+    return 1;
+  }
 
+  // print file info
   int fat;
   int len;
   print_detail(fat12.dir_entry[idx], &fat, &len);

@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum { SECTOR_SIZE = 0x200 };
+
 typedef struct dir_entry {
   unsigned char Name[11];
   unsigned char Attr;
@@ -25,11 +27,11 @@ typedef struct dir_entry {
 } DirEntry;
 
 typedef struct fat12 {
-  unsigned char ReservedRegion[0x200];
-  unsigned char FATRegion[0x200 * 9];
-  unsigned char CopyFATRegion[0x200 * 9];
-  DirEntry dir_entry[0xe0];
-  unsigned char Data[0x200 * 2847];
+  unsigned char ReservedRegion[SECTOR_SIZE];
+  unsigned char FATRegion[SECTOR_SIZE * 9];
+  unsigned char CopyFATRegion[SECTOR_SIZE * 9];
+  DirEntry dir_entry[224];
+  unsigned char Data[SECTOR_SIZE * 2847];
 } FAT12;
 
 int read_fat(int i, FAT12 fat12) {
@@ -53,8 +55,8 @@ void print_date(int d) {
 
 void print_data(int fat, int len, FAT12 fat12) {
   do {
-    int base = (fat - 33) * 0x200 + 0x3e00;
-    for (size_t k = 0; (k < 0x200) && (len > 0); len--, k++) {
+    int base = (fat - 33) * SECTOR_SIZE + 0x3e00;
+    for (size_t k = 0; (k < SECTOR_SIZE) && (len > 0); len--, k++) {
       printf("%c", fat12.Data[base + k]);
     }
   } while (len > 0 && (fat = read_fat(fat, fat12)) != 0xfff);
@@ -82,7 +84,7 @@ void print_detail(DirEntry dir_entry, int *fat, int *len) {
 }
 
 size_t find_target_file(DirEntry *dir_entry, const char *target_fname) {
-  for (size_t i = 0; i < 0xe0; i++) {
+  for (size_t i = 0; i < 224; i++) {
     if (dir_entry[i].Name[i] == 0xe5 || dir_entry[i].Attr != 0x20) {
       continue;
     }
@@ -102,6 +104,5 @@ size_t find_target_file(DirEntry *dir_entry, const char *target_fname) {
       return i;
     }
   }
-  fprintf(stderr, "can't found %s\n", target_fname);
-  exit(0);
+  return -1;
 }
