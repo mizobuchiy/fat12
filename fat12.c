@@ -1,7 +1,6 @@
 /**
  * @file fat12.c
- * @author Yuya Mizobuchi (18D8101034F)
- * @brief
+ * @brief fat12
  * @copyright Copyright (c) 2020
  *
  */
@@ -32,8 +31,7 @@ int main(int argc, char *argv[]) {
   fclose(fp);
 
   // read target file by fat12
-  // char *target_fname = argc > 2 ? argv[2] : "HELLO.TXT";
-  char *target_fname = argc > 2 ? argv[2] : "EXDIR1/18D1034F.TXT";
+  char *target_fname = argc > 2 ? argv[2] : "HELLO.TXT";
   const char *delim = "/";
   char *save_ptr = NULL;
   char *token;
@@ -65,8 +63,9 @@ int main(int argc, char *argv[]) {
     if (strcmp(save_ptr, "\0") == 0) {
       print_data(fat, len, fat12);
       return 0;
-      // if directory
     }
+
+    // if directory
     entry_size = get_subdir_size(fat, fat12);
     dir_entries = NULL;
     if ((dir_entries = malloc(entry_size)) == NULL) {
