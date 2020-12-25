@@ -34,6 +34,18 @@ typedef struct fat12 {
   unsigned char Data[SECTOR_SIZE * 2847];
 } FAT12;
 
+typedef struct long_dir_entry {
+  unsigned char Ord;
+  unsigned char Name1[10];
+  unsigned char Attr;
+  unsigned char Type;
+  unsigned char Chksum;
+  unsigned char Name2[12];
+  unsigned char FstClusLo[2];
+  unsigned char Name3[4];
+
+} LongDirEntry;
+
 void print_time(unsigned int t) {
   printf("%d:%d:%d, ", ((t & 0xf800) >> 11), ((t & 0x7e0) >> 5),
          ((t & 0x1f) << 1));
@@ -86,6 +98,50 @@ size_t find_target_file(DirEntry *dir_entry, const char *target_fname,
   for (size_t i = 0; i < 224; i++) {
     if (dir_entry[i].Name[0] == 0xe5 ||
         (dir_entry[i].Attr != 0x20 && dir_entry[i].Attr != 0x10)) {
+      if (dir_entry[i].Attr == 0x0f) {
+        LongDirEntry long_dir_entry;
+        memcpy(&long_dir_entry, &dir_entry[i], sizeof(long_dir_entry));
+
+        if (long_dir_entry.Ord <= 0x40) {
+          continue;
+        }
+
+        size_t long_size = long_dir_entry.Ord - 0x40;
+        char dir_name[13 * long_size];
+        size_t idx;
+        size_t name_idx = 0;
+
+        for (size_t j = 0; j < long_size; j++) {
+          idx = i + long_size - j - 1;
+          memcpy(&long_dir_entry, &dir_entry[idx], sizeof(long_dir_entry));
+          // printf("attr:%2x\n", long_dir_entry.Ord);
+          for (size_t k = 0; k < sizeof(long_dir_entry.Name1); k += 2) {
+            if (long_dir_entry.Name1[k] == 0xff) {
+              continue;
+            }
+            // printf("%c", long_dir_entry.Name1[k]);
+            dir_name[name_idx++] = long_dir_entry.Name1[k];
+          }
+          for (size_t k = 0; k < sizeof(long_dir_entry.Name2); k += 2) {
+            if (long_dir_entry.Name2[k] == 0xff) {
+              continue;
+            }
+            // printf("%c", long_dir_entry.Name2[k]);
+            dir_name[name_idx++] = long_dir_entry.Name2[k];
+          }
+          for (size_t k = 0; k < sizeof(long_dir_entry.Name3); k += 2) {
+            if (long_dir_entry.Name3[k] == 0xff) {
+              continue;
+            }
+            // printf("%c", long_dir_entry.Name3[k]);
+            dir_name[name_idx++] = long_dir_entry.Name3[k];
+          }
+        }
+        if (strcmp(dir_name, target_fname) == 0) {
+          printf("name = %s\n", dir_name);
+          return i + long_size;
+        }
+      }
       continue;
     }
     char dir_name[13] = "";
@@ -132,3 +188,5 @@ void set_dir(unsigned int fat, unsigned int len, FAT12 fat12,
   memcpy(subdir_entry, tmp, idx);
   free(tmp);
 }
+
+void read_long_fname() { return; }
