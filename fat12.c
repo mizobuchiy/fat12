@@ -1,10 +1,3 @@
-/**
- * @file fat12.c
- * @brief fat12
- * @copyright Copyright (c) 2020
- *
- */
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

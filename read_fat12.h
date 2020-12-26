@@ -1,9 +1,3 @@
-/**
- * @file read_fat12.h
- * @brief
- * @copyright Copyright (c) 2020
- *
- */
 #pragma once
 
 #include <stdbool.h>
@@ -106,16 +100,6 @@ void print_detail(DirEntry dir_entry, uint_t *fat, uint_t *len) {
   printf("size = %ld\n\n", *len);
 }
 
-void set_longdir_name(uint8_t *Name, size_t n, char *dir_name,
-                      size_t *dir_name_idx) {
-  for (size_t i = 0; i < n; i += 2) {
-    if (Name[i] == 0xff) {
-      continue;
-    }
-    dir_name[(*dir_name_idx)++] = Name[i];
-  }
-}
-
 void *my_malloc(size_t size) {
   void *ptr;
   if ((ptr = malloc(size)) == NULL) {
@@ -134,6 +118,16 @@ void *my_calloc(size_t nmemb, size_t size) {
   return ptr;
 }
 
+void set_longdir_name(uint8_t *Name, size_t n, char *dir_name,
+                      size_t *dir_name_idx) {
+  for (size_t i = 0; i < n; i += 2) {
+    if (Name[i] == 0xff) {
+      continue;
+    }
+    dir_name[(*dir_name_idx)++] = Name[i];
+  }
+}
+
 char *get_dir_name(DirEntry *dir_entry, size_t i, size_t *long_dir_entry_size,
                    bool is_dir) {
   char *dir_name = NULL;
@@ -150,7 +144,6 @@ char *get_dir_name(DirEntry *dir_entry, size_t i, size_t *long_dir_entry_size,
     }
 
     *long_dir_entry_size = long_dir_entry.Ord - 0x40;
-    // dir_name = my_malloc(sizeof(char) * (13 * (*long_dir_entry_size)));
     dir_name = my_calloc((13 * (*long_dir_entry_size) / 2), sizeof(char));
 
     for (size_t j = 0; j < *long_dir_entry_size; j++) {
@@ -163,8 +156,8 @@ char *get_dir_name(DirEntry *dir_entry, size_t i, size_t *long_dir_entry_size,
       set_longdir_name(long_dir_entry.Name3, sizeof(long_dir_entry.Name3),
                        dir_name, &dir_name_idx);
     }
+    // if shot file name
   } else if (dir_entry[i].Attr == ARCHIVE || dir_entry[i].Attr == DIRECTORY) {
-    // dir_name = my_malloc(sizeof(char) * 13);
     dir_name = my_calloc(12, sizeof(char));
 
     for (size_t j = 0; j < sizeof(dir_entry[0].Name); j++) {
@@ -175,7 +168,6 @@ char *get_dir_name(DirEntry *dir_entry, size_t i, size_t *long_dir_entry_size,
         dir_name[dir_name_idx++] = '.';
       }
     }
-    // printf("%s\n", dir_name);
   }
   return dir_name;
 }
